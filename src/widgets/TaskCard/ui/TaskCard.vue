@@ -4,6 +4,7 @@ import type { ITask, TTaskStatus } from '../types'
 import { UiInput } from '../../../shared/components/UiInput'
 import { UiButton } from '../../../shared/components/UiButton'
 import { UiSelect } from '../../../shared/components/UiSelect'
+import { statusOptions } from '../../../shared/composables/statusOptions.ts'
 
 const props = defineProps<{
   task: ITask
@@ -25,12 +26,6 @@ const isEditing = ref(false)
 const editTitle = ref(props.task.title)
 const newTag = ref('')
 const newSubtask = ref('')
-
-const statusOptions = [
-  { key: 'todo', name: 'To Do' },
-  { key: 'in-progress', name: 'In Progress' },
-  { key: 'done', name: 'Done' },
-]
 
 // Обработчики действий
 const handleStatusChange = (newStatus: string) => {

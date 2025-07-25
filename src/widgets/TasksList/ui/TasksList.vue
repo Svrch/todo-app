@@ -1,99 +1,117 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
-
-import { UiInput } from '../../../shared/components/UiInput'
-import { UiButton } from '../../../shared/components/UiButton'
-import TaskCard from '../../TaskCard'
 import { useTasksStore } from '../../../shared/store/tasks.ts'
 import { useTasksFilterStore } from '../store/tasksFilter.ts'
 import type { TTaskStatus } from '../../TaskCard/types'
+import ProjectSelector from '../../../features/projectSelector'
+import { UiInput } from '../../../shared/components/UiInput'
+import AddTask from '../../../features/addTask'
+import { UiButton } from '../../../shared/components/UiButton'
+import TaskCard from '../../TaskCard'
+import { ref } from 'vue'
+import { statusOptions } from '../../../shared/composables/statusOptions.ts'
 
-const taskStore = useTasksStore()
-const { tasks } = storeToRefs(taskStore)
+const tasksStore = useTasksStore()
+const tasksFilterStore = useTasksFilterStore()
 
-const taskFilterStore = useTasksFilterStore()
-const { searchQuery,
+const isCreatingTask = ref(false)
+
+const { currentProject, projects } = storeToRefs(tasksStore)
+const {
+  searchQuery,
   selectedStatuses,
   selectedTags,
   allTags,
-  filteredTasks } = storeToRefs(taskFilterStore)
+  filteredTasks,
+  filteredCount,
+  hasActiveFilters,
+} = storeToRefs(tasksFilterStore)
 
+// Обработчики задач
 const handleStatusUpdate = (taskId: string, newStatus: TTaskStatus) => {
-  taskStore.updateTaskStatus(taskId, newStatus)
+  tasksStore.updateTaskStatus(taskId, newStatus)
 }
 
 const handleDeleteTask = (taskId: string) => {
-  taskStore.deleteTask(taskId)
+  tasksStore.deleteTask(taskId)
 }
 
 const handleAddTag = (taskId: string, tag: string) => {
-  taskStore.addTagToTask(taskId, tag)
+  tasksStore.addTagToTask(taskId, tag)
 }
 
 const handleRemoveTag = (taskId: string, tag: string) => {
-  taskStore.removeTagFromTask(taskId, tag)
+  tasksStore.removeTagFromTask(taskId, tag)
 }
 
 const handleAddSubtask = (taskId: string, title: string) => {
-  taskStore.addSubtask(taskId, title)
+  tasksStore.addSubtask(taskId, title)
 }
 
 const handleUpdateTitle = (taskId: string, newTitle: string) => {
-  taskStore.updateTaskTitle(taskId, newTitle)
+  tasksStore.updateTaskTitle(taskId, newTitle)
 }
 
 const handleDeleteSubtask = (taskId: string, subtaskId: string) => {
-  taskStore.deleteSubtask(taskId, subtaskId)
+  tasksStore.deleteSubtask(taskId, subtaskId)
 }
 
 const handleSubtaskStatusChange = (taskId: string, subtaskId: string, status: TTaskStatus) => {
-  taskStore.updateSubtaskStatus(taskId, subtaskId, status)
+  tasksStore.updateSubtaskStatus(taskId, subtaskId, status)
+}
+
+const handleClearFilters = () => {
+  tasksFilterStore.resetFilters()
 }
 </script>
 
 <template>
   <div class="space-y-6 w-3/5">
-    <!-- Панель фильтров -->
-    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-3">
-      <div class="flex flex-col gap-3">
-        <!-- Поиск по названию -->
-        <div class="flex-1 min-w-0">
-          <UiInput
-            v-model="searchQuery"
-            placeholder="Search tasks..."
-            class="text-sm"
-          />
-        </div>
+    {{projects}}
+    <!-- Селектор проекта -->
+    <ProjectSelector />
+
+    <!-- Панель управления и фильтров -->
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-3 space-y-3">
+      <!-- Поиск и добавление задачи -->
+      <div class="flex gap-3 items-end">
+        <UiInput
+          v-model="searchQuery"
+          placeholder="Search tasks..."
+          class="flex-1"
+        />
+      </div>
+
+      <!-- Фильтры -->
+      <div class="flex flex-col gap-2">
         <!-- Фильтр по статусам -->
-        <div class="flex-1 min-w-0">
-          <div class="flex gap-1.5 items-center">
-            <span class="text-xs text-gray-500 mr-1">Status:</span>
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-gray-500 whitespace-nowrap">Status:</span>
+          <div class="flex flex-wrap gap-1">
             <UiButton
-              v-for="status in taskFilterStore.statusOptions"
+              v-for="status in statusOptions"
               :key="status.key"
               :variant="selectedStatuses.includes(status.key) ? 'primary' : 'ghost'"
               size="xs"
-              @click="taskFilterStore.toggleStatus(status.key)"
+              @click="tasksFilterStore.toggleStatus(status.key)"
               class="!px-2 !py-1"
             >
-              <div class="whitespace-nowrap">
-                {{ status.name }}
-              </div>
+              {{ status.name }}
             </UiButton>
           </div>
         </div>
 
         <!-- Фильтр по тегам -->
-        <div class="flex-1 min-w-0">
-          <div class="flex gap-1.5 items-center">
-            <span class="text-xs text-gray-500 mr-1">Tags:</span>
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-gray-500 whitespace-nowrap">Tags:</span>
+          <div class="flex flex-wrap gap-1">
             <template v-if="allTags.length > 0">
               <UiButton
                 v-for="tag in allTags"
                 :key="tag"
                 :variant="selectedTags.includes(tag) ? 'primary' : 'ghost'"
                 size="xs"
-                @click="taskFilterStore.toggleTag(tag)"
+                @click="tasksFilterStore.toggleTag(tag)"
                 class="!px-2 !py-1"
               >
                 {{ tag }}
@@ -104,24 +122,33 @@ const handleSubtaskStatusChange = (taskId: string, subtaskId: string, status: TT
         </div>
       </div>
 
-      <!-- Чипсы активных фильтров -->
-      <div v-if="selectedStatuses.length > 0 || selectedTags.length > 0" class="mt-2 pt-2 border-t border-gray-100">
-        <div class="flex flex-wrap gap-1.5 items-center">
+      <!-- Активные фильтры -->
+      <div
+        v-if="hasActiveFilters"
+        class="pt-2 mt-2 border-t border-gray-100"
+      >
+        <div class="flex flex-wrap items-center gap-2">
           <span class="text-xs text-gray-500">Active filters:</span>
 
-          <template v-for="status in selectedStatuses" :key="'status-'+status">
+          <template v-for="status in selectedStatuses" :key="`status-${status}`">
             <div class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-indigo-50 text-indigo-700">
-              {{  taskFilterStore.statusOptions.find(s => s.key === status)?.name }}
-              <button @click="taskFilterStore.toggleStatus(status)" class="ml-1 text-indigo-300 hover:text-indigo-500">
+              {{ statusOptions.find(s => s.key === status)?.name }}
+              <button
+                @click="tasksFilterStore.toggleStatus(status)"
+                class="ml-1 text-indigo-300 hover:text-indigo-500"
+              >
                 ×
               </button>
             </div>
           </template>
 
-          <template v-for="tag in selectedTags" :key="'tag-'+tag">
+          <template v-for="tag in selectedTags" :key="`tag-${tag}`">
             <div class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-indigo-50 text-indigo-700">
               {{ tag }}
-              <button @click="taskFilterStore.toggleTag(tag)" class="ml-1 text-indigo-300 hover:text-indigo-500">
+              <button
+                @click="tasksFilterStore.toggleTag(tag)"
+                class="ml-1 text-indigo-300 hover:text-indigo-500"
+              >
                 ×
               </button>
             </div>
@@ -130,7 +157,7 @@ const handleSubtaskStatusChange = (taskId: string, subtaskId: string, status: TT
           <UiButton
             variant="ghost"
             size="xs"
-            @click="() => { selectedStatuses = []; selectedTags = [] }"
+            @click="handleClearFilters"
             class="!px-2 !py-0.5 text-xs text-gray-500 hover:text-indigo-600"
           >
             Clear all
@@ -138,10 +165,13 @@ const handleSubtaskStatusChange = (taskId: string, subtaskId: string, status: TT
         </div>
       </div>
     </div>
+    <AddTask v-model="isCreatingTask" />
 
-    <!-- Счетчик задач -->
+    <!-- Статистика -->
     <div class="text-sm text-gray-500">
-      Showing {{ filteredTasks.length }} of {{ tasks.length }} tasks
+      <template v-if="currentProject">
+        Showing {{ filteredCount }} of {{ currentProject.tasks.length }} tasks in "{{ currentProject.name }}"
+      </template>
     </div>
 
     <!-- Список задач -->
@@ -165,7 +195,17 @@ const handleSubtaskStatusChange = (taskId: string, subtaskId: string, status: TT
         v-if="filteredTasks.length === 0"
         class="text-center py-8 text-gray-400"
       >
-        No tasks found. Try adjusting your filters.
+        <template v-if="hasActiveFilters">
+          No tasks match your filters. <button
+            @click="handleClearFilters"
+            class="text-indigo-500 hover:underline"
+          >
+            Clear filters
+          </button>
+        </template>
+        <template v-else>
+          No tasks in this project yet. Create your first task!
+        </template>
       </div>
     </div>
   </div>
