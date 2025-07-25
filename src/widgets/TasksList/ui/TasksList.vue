@@ -10,6 +10,7 @@ import { UiButton } from '../../../shared/components/UiButton'
 import TaskCard from '../../TaskCard'
 import { ref } from 'vue'
 import { statusOptions } from '../../../shared/composables/statusOptions.ts'
+import ExportImport from '../../../features/encryption'
 
 const tasksStore = useTasksStore()
 const tasksFilterStore = useTasksFilterStore()
@@ -67,12 +68,12 @@ const handleClearFilters = () => {
 
 <template>
   <div class="space-y-6 w-3/5">
-    {{projects}}
+    <ExportImport/>
     <!-- Селектор проекта -->
     <ProjectSelector />
 
     <!-- Панель управления и фильтров -->
-    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-3 space-y-3">
+    <div v-if="currentProject?.tasks.length" class="bg-white rounded-xl border border-gray-100 shadow-sm p-3 space-y-3">
       <!-- Поиск и добавление задачи -->
       <div class="flex gap-3 items-end">
         <UiInput
@@ -86,7 +87,7 @@ const handleClearFilters = () => {
       <div class="flex flex-col gap-2">
         <!-- Фильтр по статусам -->
         <div class="flex items-center gap-2">
-          <span class="text-xs text-gray-500 whitespace-nowrap">Status:</span>
+          <span class="text-gray-500 whitespace-nowrap">Status:</span>
           <div class="flex flex-wrap gap-1">
             <UiButton
               v-for="status in statusOptions"
@@ -103,7 +104,7 @@ const handleClearFilters = () => {
 
         <!-- Фильтр по тегам -->
         <div class="flex items-center gap-2">
-          <span class="text-xs text-gray-500 whitespace-nowrap">Tags:</span>
+          <span class="text-gray-500 whitespace-nowrap">Tags:</span>
           <div class="flex flex-wrap gap-1">
             <template v-if="allTags.length > 0">
               <UiButton
@@ -117,7 +118,7 @@ const handleClearFilters = () => {
                 {{ tag }}
               </UiButton>
             </template>
-            <span v-else class="text-xs text-gray-400">No tags</span>
+            <span v-else class="text-gray-400">No tags</span>
           </div>
         </div>
       </div>
@@ -128,10 +129,10 @@ const handleClearFilters = () => {
         class="pt-2 mt-2 border-t border-gray-100"
       >
         <div class="flex flex-wrap items-center gap-2">
-          <span class="text-xs text-gray-500">Active filters:</span>
+          <span class="text-gray-500">Active filters:</span>
 
           <template v-for="status in selectedStatuses" :key="`status-${status}`">
-            <div class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-indigo-50 text-indigo-700">
+            <div class="inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700">
               {{ statusOptions.find(s => s.key === status)?.name }}
               <button
                 @click="tasksFilterStore.toggleStatus(status)"
@@ -143,7 +144,7 @@ const handleClearFilters = () => {
           </template>
 
           <template v-for="tag in selectedTags" :key="`tag-${tag}`">
-            <div class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-indigo-50 text-indigo-700">
+            <div class="inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700">
               {{ tag }}
               <button
                 @click="tasksFilterStore.toggleTag(tag)"
@@ -158,14 +159,21 @@ const handleClearFilters = () => {
             variant="ghost"
             size="xs"
             @click="handleClearFilters"
-            class="!px-2 !py-0.5 text-xs text-gray-500 hover:text-indigo-600"
+            class="!px-2 !py-0.5 text-gray-500 hover:text-indigo-600"
           >
             Clear all
           </UiButton>
         </div>
       </div>
     </div>
-    <AddTask v-model="isCreatingTask" />
+    <div v-else-if="!projects.length">
+      {{ `No Projects` }}
+    </div>
+    <div v-else>
+      {{ `No Tasks in ${currentProject?.name} project` }}
+    </div>
+
+    <AddTask v-if="projects.length" v-model="isCreatingTask" />
 
     <!-- Статистика -->
     <div class="text-sm text-gray-500">
@@ -203,7 +211,7 @@ const handleClearFilters = () => {
             Clear filters
           </button>
         </template>
-        <template v-else>
+        <template v-else-if="projects.length">
           No tasks in this project yet. Create your first task!
         </template>
       </div>

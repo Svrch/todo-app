@@ -82,7 +82,7 @@ const handleSubtaskStatusChange = (subtaskId: string, status: string) => {
             v-model="editTitle"
             class="text-base font-medium w-full"
             autofocus
-            @blur="handleTitleUpdate"
+            @focusout="handleTitleUpdate"
             @keyup.enter="handleTitleUpdate"
           />
           <h3
@@ -100,7 +100,7 @@ const handleSubtaskStatusChange = (subtaskId: string, status: string) => {
             :options="statusOptions"
             :selected-key="task.status"
             @update:selected="handleStatusChange"
-            class="text-xs w-28"
+            class="w-30"
           />
           <UiButton
             variant="ghost"
@@ -133,12 +133,12 @@ const handleSubtaskStatusChange = (subtaskId: string, status: string) => {
           <span
             v-for="tag in task.tags"
             :key="tag"
-            class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-indigo-50 text-indigo-700"
+            class="inline-flex items-center px-3 py-1 rounded-full font-medium bg-indigo-50 text-indigo-700"
           >
             {{ tag }}
             <button
               @click="handleRemoveTag(tag)"
-              class="ml-0.5 text-indigo-300 hover:text-indigo-500 text-xs"
+              class="ml-0.5 text-indigo-300 hover:text-indigo-500"
             >
               ×
             </button>
@@ -147,13 +147,25 @@ const handleSubtaskStatusChange = (subtaskId: string, status: string) => {
           <UiInput
             v-model="newTag"
             placeholder="+Tag"
-            class="text-xs !py-1 !px-2 w-16 min-w-0"
+            class="!py-1 !px-2 w-45 min-w-0"
             @keyup.enter="handleAddTag"
+            @focusout="handleAddTag"
           />
         </div>
 
-        <div class="text-xs text-gray-400 whitespace-nowrap ml-2">
-          {{ new Date(task.updatedAt).toLocaleDateString('en', { month: 'short', day: 'numeric' }) }}
+      </div>
+      <div class="flex gap-8">
+        <div>
+          Created at
+          <div class="text-gray-400 whitespace-nowrap">
+            {{ new Date(task.createdAt).toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' }) }}
+          </div>
+        </div>
+        <div>
+          Updated at
+          <div class="text-gray-400 whitespace-nowrap">
+            {{ new Date(task.updatedAt).toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' }) }}
+          </div>
         </div>
       </div>
     </div>
@@ -167,7 +179,7 @@ const handleSubtaskStatusChange = (subtaskId: string, status: string) => {
           class="flex items-center gap-2 text-sm"
         >
 
-          <span class="text-xs text-gray-600 truncate flex-1">
+          <span class="text-gray-600 truncate flex-1">
             {{ subtask.title }}
           </span>
 
@@ -175,8 +187,7 @@ const handleSubtaskStatusChange = (subtaskId: string, status: string) => {
             :options="statusOptions"
             :selected-key="subtask.status"
             @update:selected="(status) => handleSubtaskStatusChange(subtask.id, status)"
-            size="xs"
-            class="w-24"
+            class="w-30"
           />
 
           <UiButton
@@ -218,7 +229,7 @@ const handleSubtaskStatusChange = (subtaskId: string, status: string) => {
           size="sm"
           @click="handleAddSubtask"
         >
-          Add
+          Add Subtask
         </UiButton>
       </div>
     </div>

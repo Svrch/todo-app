@@ -76,12 +76,12 @@ const resetForm = () => {
         />
 
         <div class="flex items-center gap-2">
-          <span class="text-xs text-gray-500">Status:</span>
+          <span class="text-gray-500">Status:</span>
           <UiSelect
             :options="statusOptions"
             :selected-key="taskStatus"
             @update:selected="handleStatusChange"
-            class="text-xs w-28"
+            class="w-30"
           />
         </div>
       </div>
@@ -89,7 +89,7 @@ const resetForm = () => {
       <div class="flex justify-end gap-2 pt-2">
         <UiButton
           @click="handleCancel"
-          variant="ghost"
+          variant="danger"
           size="sm"
         >
           Cancel

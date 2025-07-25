@@ -18,6 +18,7 @@ const model = defineModel()
         'focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500',
         props.error ? 'border-red-500' : 'border-gray-300',
       ]"
+      :type="props.type"
     />
     <p v-if="props.error" class="text-sm text-red-600">{{ props.error }}</p>
   </div>

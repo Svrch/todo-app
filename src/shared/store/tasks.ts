@@ -1,15 +1,13 @@
-// store/tasks.ts
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import type { ITask, Project, TTaskStatus } from '../../widgets/TaskCard/types'
 import { loadFromStorage, saveToStorage } from '../composables/localStorage.ts'
 
 export const useTasksStore = defineStore('tasks', () => {
-  // Состояние
   // Загрузка проектов из localStorage при инициализации
   const initialData = loadFromStorage()
   const projects = ref<Project[]>(initialData?.projects || [])
-  const selectedProjectId = ref<string>(initialData?.projects[0].id ? initialData?.projects[0].id : '')
+  const selectedProjectId = ref<string>(initialData?.projects[0]?.id ? initialData?.projects[0].id : '')
 
   // Сохранение при изменении проектов
   watch(projects, (newProjects) => {
