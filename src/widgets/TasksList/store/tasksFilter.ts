@@ -1,18 +1,32 @@
 // store/tasks-filter.ts
 import { defineStore, storeToRefs } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useTasksStore } from '../../../shared/store/tasks.ts'
 import type { TTaskStatus } from '../../TaskCard/types'
+import { loadFromStorage, saveToStorage } from '../../../shared/composables/localStorage.ts'
 
 export const useTasksFilterStore = defineStore('tasks-filter', () => {
   const tasksStore = useTasksStore()
   const { currentTasks } = storeToRefs(tasksStore)
 
   // Состояние фильтров
-  const searchQuery = ref('')
-  const selectedStatuses = ref<TTaskStatus[]>([])
-  const selectedTags = ref<string[]>([])
+  const initialData = loadFromStorage()
+  const searchQuery = ref<string>(initialData?.filters?.search || '')
+  const selectedStatuses = ref<string[]>(initialData?.filters?.statuses || [])
+  const selectedTags = ref<string[]>(initialData?.filters?.tags || [])
 
+  // Сохранение при изменении фильтров
+  watch([searchQuery, selectedStatuses, selectedTags], () => {
+    const currentData = loadFromStorage() || { projects: [] }
+    saveToStorage({
+      projects: currentData.projects,
+      filters: {
+        search: searchQuery.value,
+        statuses: selectedStatuses.value,
+        tags: selectedTags.value,
+      },
+    })
+  }, { deep: true })
 
   // Получение уникальных тегов для текущего проекта
   const allTags = computed(() => {
